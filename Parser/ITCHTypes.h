@@ -1,5 +1,5 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef ITCHTYPES_H
+#define ITCHTYPES_H
 
 enum class TYPE : size_t {
     MSGTYPE = 0,
@@ -63,11 +63,12 @@ static constexpr FieldMeta FIELD_META[] = {
 
 
 struct Field {
-    TYPE type;
-    uint64_t u64;
-    std::string s;
-    bool is_string;
+    TYPE type = TYPE::NONE;
+    uint64_t u64 = 0;
+    std::string s{};
+    bool is_string = false;
 };
+
 
 
 #endif

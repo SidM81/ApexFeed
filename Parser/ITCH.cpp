@@ -1,5 +1,5 @@
 #include "ITCH.h"
-#include "Types.h"
+#include "ITCHTypes.h"
 
 
 ITCH::ITCH() {
@@ -163,63 +163,49 @@ static inline std::string u64_to_string(uint64_t v) {
 }
 
 
-vector<Field> ITCH::parseMsg(vector<uint8_t> message) {
-    vector<Field> parsedFields;
-    if (message.empty()) {
-        return parsedFields;
+void ITCH::parseMsg(const uint8_t* msg, Field* outFields, size_t& fieldCount) {
+    if (!msg) {
+        fieldCount = 0;
+        return;
     }
 
-    char msgType = static_cast<char>(message[0]);
+    char msgType = static_cast<char>(msg[0]);
+    size_t numFields = itchMessageNumFields(msgType);
 
-    for (size_t i = 0; i < itchMessageNumFields(msgType); ++i) {
+    for (size_t i = 0; i < numFields; ++i) {
         auto [offset, length] = offsetTable[msgType][msgFields[msgType][i]];
-        if (length > 0) {
+        TYPE field = static_cast<TYPE>(msgFields[msgType][i]);
+        FIELD_KIND kind = FIELD_META[idx(field)].kind;
 
-            TYPE field = static_cast<TYPE>(msgFields[msgType][i]);
-            FIELD_KIND kind = FIELD_META[idx(field)].kind;
-
-            switch (kind) {
-                case FIELD_KIND::UINT: {
-                    uint64_t value = read_be(&message[offset], length);
-                    parsedFields.push_back({.type = field, .u64 = value, .is_string = false});
-                    break;
-                }
-                case FIELD_KIND::CHAR: {
-                    char c = static_cast<char>(message[offset]);
-                    parsedFields.push_back({
-                        .type = field,
-                        .s = std::string(1, c),
-                        .is_string = true
-                    });
-                    break;
-                }
-                case FIELD_KIND::ASCII: {
-                    std::string s(
-                        message.begin() + offset,
-                        message.begin() + offset + length
-                    );
-                    parsedFields.push_back({.type = field, .s = s, .is_string = true});
-                    break;
-                }
-                case FIELD_KIND::PRICE: {
-                    uint64_t raw = read_be(&message[offset], length);
-                    parsedFields.push_back({.type = field, .u64 = raw, .is_string = false});
-                    break;
-                }
-            }
-        } else {
-            parsedFields.push_back({.type = TYPE::NONE,.s = "",.is_string = true}); // Empty field
+        outFields[i].type = field;
+        switch (kind) {
+            case FIELD_KIND::UINT:
+            case FIELD_KIND::PRICE:
+                outFields[i].u64 = read_be(msg + offset, length);
+                outFields[i].is_string = false;
+                outFields[i].s.clear();
+                break;
+            case FIELD_KIND::CHAR:
+                outFields[i].s = std::string(1, static_cast<char>(msg[offset]));
+                outFields[i].is_string = true;
+                outFields[i].u64 = 0;
+                break;
+            case FIELD_KIND::ASCII:
+                outFields[i].s.assign(reinterpret_cast<const char*>(msg + offset), length);
+                outFields[i].is_string = true;
+                outFields[i].u64 = 0;
+                break;
         }
     }
-
-    return parsedFields;
+    fieldCount = numFields;
 }
 
-
-void ITCH::processBuffer(const uint8_t *buffer, size_t length) {
+void ITCH::processBuffer(const uint8_t *buffer, size_t length, std::function<void(const Field*, size_t)> onMessage) {
     size_t cursor = 0;
+    Field fields[32];
+    size_t fieldCount;
 
-    if (incompleteMsgBuffer.size() > 0) {
+    if (!incompleteMsgBuffer.empty()) {
         size_t needed = 0;
         if (incompleteMsgBuffer.size() >= 1) {
             char msgType = static_cast<char>(incompleteMsgBuffer[0]);
@@ -234,7 +220,8 @@ void ITCH::processBuffer(const uint8_t *buffer, size_t length) {
         cursor += toCopy;
 
         if (incompleteMsgBuffer.size() == needed) {
-            parsedMessages.push_back(parseMsg(incompleteMsgBuffer));
+            parseMsg(incompleteMsgBuffer.data(), fields, fieldCount);
+            onMessage(fields, fieldCount);
             incompleteMsgBuffer.clear();
         } else {
             return;
@@ -242,20 +229,18 @@ void ITCH::processBuffer(const uint8_t *buffer, size_t length) {
     }
 
     while (cursor < length) {
-
+        if (__builtin_expect(cursor + 1 > length, 0)) break;
         char msgType = static_cast<char>(buffer[cursor]);
         size_t msgLength = itchMessageLength(msgType);
 
-        if (msgLength == 0 || cursor + msgLength > length) {
-            break; // Unknown message type
+        if (__builtin_expect(msgLength == 0 || cursor + msgLength > length, 0)) {
+            break;
         }
 
-        vector<uint8_t> message(buffer + cursor, buffer + cursor + msgLength);
-        parsedMessages.push_back(parseMsg(message));
+        parseMsg(buffer + cursor, fields, fieldCount);
+        onMessage(fields, fieldCount);
 
         cursor += msgLength;
-
     }
     incompleteMsgBuffer.insert(incompleteMsgBuffer.end(), buffer + cursor, buffer + length);
-    return ;
 }

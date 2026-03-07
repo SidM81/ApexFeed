@@ -2,7 +2,7 @@
 #define PARSER_H
 
 #include <bits/stdc++.h>
-#include "Types.h"
+#include "ITCHTypes.h"
 using namespace std;
 
 class Parser {
@@ -10,8 +10,8 @@ public:
     Parser() = default;
     virtual ~Parser() = default;
 
-    virtual void processBuffer(const uint8_t *buffer, size_t length) = 0;
-    virtual vector<Field> parseMsg(vector<uint8_t> message) = 0;
+    virtual void processBuffer(const uint8_t *buffer, size_t length, std::function<void(const Field*, size_t)> onMessage) = 0;
+    virtual void parseMsg(const uint8_t* msg, Field* outFields, size_t& fieldCount) = 0;
 
 protected:
     static constexpr int MAX_MSG_TYPES = 256;
