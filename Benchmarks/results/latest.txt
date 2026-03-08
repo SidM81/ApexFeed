@@ -1,0 +1,39 @@
+# ApexFeed Benchmark Report
+generated_utc: 2026-03-07T14:01:08Z
+host: Sid-PC
+build_dir: build
+smoke_count: 200000
+ingest_count: 120000
+ingest_report_every: 50000
+latency_iterations: 2000000
+
+## TCP Smoke
+$ ./scripts/smoke_tcp.sh build 200000
+[Receiver] Listening on 127.0.0.1:9001
+[Receiver] Client connected
+[PERF] messages=100679 time=1.02028 msg/sec=98677.8 avg_parse_ns=141.304
+[PERF] messages=200000 time=1.03629 msg/sec=192996 avg_parse_ns=146.969
+[Receiver] Client disconnected
+[PERF] messages=200000 time=1.03631 msg/sec=192993 avg_parse_ns=146.969
+[STATS] message-type-counts A=200000
+[BOOK] orders=200000 best_bid=15024@4196000 best_ask=15000@4000000
+
+## Epoll Ingest Smoke
+$ ./scripts/smoke_ingest.sh build 120000 50000
+[PERF] messages=50083 time=1.00607 msg/sec=49780.8 avg_parse_ns=139.333
+[PERF] messages=100017 time=1.01761 msg/sec=98286.4 avg_parse_ns=182.676
+[PERF] messages=115648 time=2.00723 msg/sec=57615.7 avg_parse_ns=176.371
+[STATS] message-type-counts A=115648
+[BOOK] orders=115648 best_bid=15024@2425288 best_ask=15000@2313000
+[INGEST] chunk_backpressure_events=0
+
+## Latency Benchmark
+$ build/latency_bench 2000000
+[LAT] iterations=2000000 cycles_per_msg=80.5161 ns_per_msg=29.9552
+
+## Summary
+smoke_last_perf: [PERF] messages=200000 time=1.03631 msg/sec=192993 avg_parse_ns=146.969
+smoke_type_stats: [STATS] message-type-counts A=200000
+ingest_last_perf: [PERF] messages=115648 time=2.00723 msg/sec=57615.7 avg_parse_ns=176.371
+ingest_backpressure: [INGEST] chunk_backpressure_events=0
+latency: [LAT] iterations=2000000 cycles_per_msg=80.5161 ns_per_msg=29.9552

@@ -1,23 +1,32 @@
 #ifndef ITCH_H
 #define ITCH_H
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include "Parser.h"
-#include "ITCHTypes.h"
 
-class ITCH : public Parser {
-    public:
-        ITCH();
-        ~ITCH();
+class ITCH final : public Parser {
+public:
+    static constexpr std::size_t kMaxMessageLength = 44;
 
-        void processBuffer(const uint8_t *buffer, size_t length, std::function<void(const Field*, size_t)> onMessage) override;
-        void parseMsg(const uint8_t* msg, Field* outFields, size_t& fieldCount) override;
+    ITCH() = default;
+    ~ITCH() override = default;
 
-    private:
-        vector<uint8_t> incompleteMsgBuffer;
+    void processBuffer(const std::uint8_t* buffer,
+                       std::size_t length,
+                       const MessageCallback& onMessage) override;
+
+    void parseMsg(const std::uint8_t* msg,
+                  Field* outFields,
+                  std::size_t& fieldCount) const override;
+
+    static std::size_t messageLength(char type);
+
+private:
+    std::array<std::uint8_t, kMaxMessageLength> partial_msg_{};
+    std::size_t partial_len_{0};
+    std::size_t expected_len_{0};
 };
-
-constexpr size_t idx(TYPE t) {
-    return static_cast<size_t>(t);
-}
 
 #endif

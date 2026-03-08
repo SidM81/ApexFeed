@@ -1,10 +1,16 @@
 #ifndef ITCHTYPES_H
 #define ITCHTYPES_H
 
-enum class TYPE : size_t {
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <string_view>
+
+enum class TYPE : std::uint8_t {
     MSGTYPE = 0,
     STCK_LOC = 1,
-    TRCK_NO  = 2,
+    TRCK_NO = 2,
     TIMESTAMP = 3,
     ORDR_REF_NO = 4,
     NEW_ORDR_REF_NO = 5,
@@ -25,50 +31,46 @@ enum class TYPE : size_t {
     NONE = 20
 };
 
-enum class FIELD_KIND {
-    UINT,       // binary integer
-    ASCII,      // fixed-width text
-    CHAR,       // single character
-    PRICE       // scaled integer
+enum class FIELD_KIND : std::uint8_t {
+    UINT,
+    ASCII,
+    CHAR,
+    PRICE
 };
-
-struct FieldMeta {
-    FIELD_KIND kind;
-};
-
-static constexpr FieldMeta FIELD_META[] = {
-    {FIELD_KIND::CHAR},   // MSGTYPE = 0
-    {FIELD_KIND::UINT},   // STCK_LOC
-    {FIELD_KIND::UINT},   // TRCK_NO
-    {FIELD_KIND::UINT},   // TIMESTAMP
-    {FIELD_KIND::UINT},   // ORDR_REF_NO
-    {FIELD_KIND::UINT},   // NEW_ORDR_REF_NO
-    {FIELD_KIND::UINT},   // BUY_ORDR_REF_NO
-    {FIELD_KIND::UINT},   // SELL_ORDR_REF_NO
-    {FIELD_KIND::CHAR},   // SIDE
-    {FIELD_KIND::UINT},   // QNTY
-    {FIELD_KIND::ASCII},  // STCK
-    {FIELD_KIND::PRICE},  // PRICE
-    {FIELD_KIND::PRICE},  // CROSS_PRICE
-    {FIELD_KIND::ASCII},  // CROSS_TYPE (could be CHAR/ASCII depending on spec)
-    {FIELD_KIND::UINT},   // ATTRBTN
-    {FIELD_KIND::UINT},   // EXEC_SHARES
-    {FIELD_KIND::UINT},   // MATCH_NO
-    {FIELD_KIND::CHAR},   // PRNTABLE
-    {FIELD_KIND::PRICE},  // EXEC_PRICE
-    {FIELD_KIND::UINT},   // CNCLD_SHARES
-    {FIELD_KIND::ASCII}   // NONE (won’t really be used)
-};
-
-
 
 struct Field {
-    TYPE type = TYPE::NONE;
-    uint64_t u64 = 0;
-    std::string s{};
-    bool is_string = false;
+    TYPE type{TYPE::NONE};
+    FIELD_KIND kind{FIELD_KIND::UINT};
+    std::uint64_t u64{0};
+    std::uint8_t ascii_len{0};
+    std::array<char, 16> ascii{};
+
+    [[nodiscard]] inline std::string_view asStringView() const {
+        return std::string_view(ascii.data(), ascii_len);
+    }
+
+    inline void setChar(char c) {
+        ascii_len = 1;
+        ascii[0] = c;
+        for (std::size_t i = 1; i < ascii.size(); ++i) {
+            ascii[i] = '\0';
+        }
+    }
+
+    inline void setAscii(const char* src, std::size_t len) {
+        const std::size_t clipped = len > ascii.size() ? ascii.size() : len;
+        std::memcpy(ascii.data(), src, clipped);
+        ascii_len = static_cast<std::uint8_t>(clipped);
+        if (clipped < ascii.size()) {
+            std::memset(ascii.data() + clipped, 0, ascii.size() - clipped);
+        }
+    }
 };
 
+constexpr std::size_t idx(TYPE t) {
+    return static_cast<std::size_t>(t);
+}
 
+constexpr std::size_t kMaxParsedFields = 16;
 
 #endif

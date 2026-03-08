@@ -1,23 +1,24 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <bits/stdc++.h>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
 #include "ITCHTypes.h"
-using namespace std;
 
 class Parser {
 public:
-    Parser() = default;
+    using MessageCallback = std::function<void(const Field*, std::size_t)>;
+
     virtual ~Parser() = default;
 
-    virtual void processBuffer(const uint8_t *buffer, size_t length, std::function<void(const Field*, size_t)> onMessage) = 0;
-    virtual void parseMsg(const uint8_t* msg, Field* outFields, size_t& fieldCount) = 0;
+    virtual void processBuffer(const std::uint8_t* buffer,
+                               std::size_t length,
+                               const MessageCallback& onMessage) = 0;
 
-protected:
-    static constexpr int MAX_MSG_TYPES = 256;
-    static constexpr int NUM_TYPES = 20;
-    array<vector<uint8_t>, MAX_MSG_TYPES> msgFields;
-    array<array<pair<int,int>, NUM_TYPES>, MAX_MSG_TYPES> offsetTable;
+    virtual void parseMsg(const std::uint8_t* msg,
+                          Field* outFields,
+                          std::size_t& fieldCount) const = 0;
 };
 
 #endif
