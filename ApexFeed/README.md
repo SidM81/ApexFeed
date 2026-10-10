@@ -107,3 +107,39 @@ Expected local performance on a modern desktop CPU (Release build):
 - `>100k msg/sec` is realistic with TCP test feed
 - Parser path should sustain significantly above that under replay/bench modes
 - `latency_bench` reports cycles/message and ns/message for parser-only cost
+
+## ApexAlpha (microstructure research layer)
+
+ApexAlpha lives at `../ApexAlpha/` (repo root sibling of `ApexFeed/`) and adds:
+
+- Multi-symbol routing over parsed ITCH events
+- Feature engine (`spread`, `mid`, `microprice`, `queue_imbalance`, `order_flow_imbalance`)
+- Threshold strategy + immediate top-of-book execution simulation
+- CSV event logging and end-of-run symbol/global PnL summary
+
+Build with the standard flow, then run:
+
+```bash
+./build/replay_strategy <binary_itch_file> --chunk=65536 --report=100000 --out=Benchmarks/results/apexalpha_events.csv --strategy-config=path/to/config.txt
+```
+
+Run ApexAlpha tests directly after build:
+
+```bash
+./build/test_apexalpha_features
+./build/test_apexalpha_router
+./build/test_apexalpha_strategy_sim
+```
+
+Strategy config is optional and uses `key=value` lines, for example:
+
+```text
+order_size=100
+max_position=1000
+buy_qi_threshold=0.20
+sell_qi_threshold=-0.20
+buy_ofi_threshold=0.0
+sell_ofi_threshold=0.0
+```
+
+

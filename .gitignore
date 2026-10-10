@@ -1,0 +1,31 @@
+# Workspace artifacts
+Test/build_apexalpha/
+Test/results/
+Test/StressTesting/generated/
+Test/StressTesting/results/
+Test/PerfTesting/generated/
+Test/PerfTesting/results/
+
+# Python helper outputs
+__pycache__/
+*.pyc
+
+# Build and CMake outputs
+build/
+build-*/
+cmake-build-*/
+out/
+
+# Logs and profiling
+*.log
+*.prof
+*.gcda
+*.gcno
+*.gcov
+
+# Editors and OS files
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store
+Thumbs.db
