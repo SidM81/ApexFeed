@@ -1,49 +1,31 @@
-# Ignore test directory
-Test/
+# Workspace artifacts
+Test/build_apexalpha/
+Test/results/
+Test/StressTesting/generated/
+Test/StressTesting/results/
+Test/PerfTesting/generated/
+Test/PerfTesting/results/
 
-# Compiled object files
-*.o
-*.obj
-*.lo
+# Python helper outputs
+__pycache__/
+*.pyc
 
-# Precompiled headers
-*.gch
-*.pch
-
-# Compiled libraries
-*.a
-*.lib
-*.so
-*.dll
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# Build directories
+# Build and CMake outputs
 build/
+build-*/
 cmake-build-*/
 out/
 
-# CMake files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-
-# Debug / profiling files
+# Logs and profiling
+*.log
 *.prof
 *.gcda
 *.gcno
 *.gcov
 
-# IDE / editor files
+# Editors and OS files
 .vscode/
 .idea/
 *.code-workspace
-
-# OS files
 .DS_Store
 Thumbs.db
